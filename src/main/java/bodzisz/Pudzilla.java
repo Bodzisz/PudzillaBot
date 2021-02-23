@@ -1,0 +1,22 @@
+package bodzisz;
+
+import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.login.LoginException;
+
+
+public class Pudzilla {
+    public static JDA jda;
+    public final static String token = "ODEzODE4NTAxODM5MDYxMDAy.YDU1ig.TktzbXtSFK8ch2jsbl_DaI59004";
+    final static Logger logger = LoggerFactory.getLogger(Pudzilla.class);
+
+    public static void main(String[] args) throws LoginException {
+        jda = JDABuilder.createDefault(token).build();
+
+    }
+}
