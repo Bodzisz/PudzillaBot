@@ -2,6 +2,7 @@ package bodzisz;
 
 import bodzisz.commands.Test;
 import bodzisz.commands.Pudzian;
+import bodzisz.commands.audio.Play;
 import bodzisz.events.GuildMemberJoin;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -24,6 +25,7 @@ public class Pudzilla {
         jda.addEventListener(new Test());
         jda.addEventListener(new GuildMemberJoin());
         jda.addEventListener(new Pudzian());
+        jda.addEventListener(new Play());
 
     }
 }
