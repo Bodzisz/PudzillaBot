@@ -41,41 +41,41 @@ public class Play extends ListenerAdapter {
             } catch (NullPointerException e) {
                 e.printStackTrace();
             }
+            if (args[1] != null) {
 
-            audioManager.loadItem("https://www.youtube.com/watch?v=GaeXlnNf2R8&ab_channel=%23GM2LTV", new AudioLoadResultHandler() {
-                @Override
-                public void trackLoaded(AudioTrack track) {
-                    trackScheduler.queue(track);
-                }
-
-                @Override
-                public void playlistLoaded(AudioPlaylist playlist) {
-                    for (AudioTrack track : playlist.getTracks()) {
+                audioManager.loadItemOrdered(player, args[1], new AudioLoadResultHandler() {
+                    @Override
+                    public void trackLoaded(AudioTrack track) {
                         trackScheduler.queue(track);
                     }
+
+                    @Override
+                    public void playlistLoaded(AudioPlaylist playlist) {
+                        for (AudioTrack track : playlist.getTracks()) {
+                            trackScheduler.queue(track);
+                        }
+                    }
+
+                    @Override
+                    public void noMatches() {
+                        // Notify the user that we've got nothing
+                    }
+
+                    @Override
+                    public void loadFailed(FriendlyException throwable) {
+                        // Notify the user that everything exploded
+                    }
+                });
+
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
 
-                @Override
-                public void noMatches() {
-                    // Notify the user that we've got nothing
-                }
-
-                @Override
-                public void loadFailed(FriendlyException throwable) {
-                    // Notify the user that everything exploded
-                }
-            });
-
-            player.playTrack(player.getPlayingTrack());
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e)
-            {
-                e.printStackTrace();
+                event.getChannel().sendMessage("Playing " + player.getPlayingTrack().getInfo().title).queue();
             }
-
-            event.getChannel().sendMessage(player.getPlayingTrack().getInfo().title).queue();
         }
     }
 
