@@ -17,12 +17,12 @@ import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.io.File;
 
-public class Play extends ListenerAdapter {
+public class Music extends ListenerAdapter {
 
-    private AudioPlayerManager audioManager;
+    private final AudioPlayerManager audioManager;
     GuildMusicManager guildMusicManager;
 
-    public Play() {
+    public Music() {
         audioManager = new DefaultAudioPlayerManager();
         guildMusicManager = new GuildMusicManager(audioManager);
         AudioSourceManagers.registerRemoteSources(audioManager);
@@ -34,10 +34,14 @@ public class Play extends ListenerAdapter {
     {
         String[] args = event.getMessage().getContentRaw().split("\\s+");
 
-        if(args[0].equalsIgnoreCase(Pudzilla.prefix + "p")) { play(args,event); }
-        if(args[0].equalsIgnoreCase(Pudzilla.prefix + "skip")) { skip(args,event); }
-
-
+        if(args[0].equalsIgnoreCase(Pudzilla.prefix + "p") ||
+                args[0].equalsIgnoreCase(Pudzilla.prefix + "play")) { play(args,event); }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "skip")) { skip(event); }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "leave")) { leave(event); }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "pause")) { pause(event); }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "np") ||
+                args[0].equalsIgnoreCase(Pudzilla.prefix + "nowplaying")) { nowPlaying(event); }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "queue")) { showQueue(event); }
     }
 
     private void play(String[] args, GuildMessageReceivedEvent event) {
@@ -85,12 +89,13 @@ public class Play extends ListenerAdapter {
                     }
                 }
                 else {
-                    event.getChannel().sendMessage("Already playing!").queue();
+                    guildMusicManager.player.setPaused(false);
+                    event.getChannel().sendMessage("Unpaused or already playing!").queue();
                 }
             }
     }
 
-    private void skip(String[] args, GuildMessageReceivedEvent event) {
+    private void skip(GuildMessageReceivedEvent event) {
         if(!guildMusicManager.scheduler.isEmpty()) {
             guildMusicManager.scheduler.nextTrack();
             event.getChannel().sendMessage("Skipped!").queue();
@@ -99,5 +104,39 @@ public class Play extends ListenerAdapter {
             event.getChannel().sendMessage("Queue is empty!").queue();
         }
     }
+
+    private void leave(GuildMessageReceivedEvent event) {
+        event.getGuild().getAudioManager().setSendingHandler(null);
+        event.getGuild().getAudioManager().closeAudioConnection();
+        guildMusicManager.scheduler.clearQueue();
+        guildMusicManager.scheduler.nextTrack();
+    }
+
+    private void pause(GuildMessageReceivedEvent event) {
+        guildMusicManager.player.setPaused(true);
+        event.getChannel().sendMessage("Music paused!").queue();
+    }
+
+    private void nowPlaying(GuildMessageReceivedEvent event) {
+        if(guildMusicManager.player.getPlayingTrack() != null) {
+            event.getChannel().sendMessage("Playing " + guildMusicManager.player.getPlayingTrack().getInfo().title).queue();
+        }
+        else {
+            event.getChannel().sendMessage("Nothing is being played at the moment!").queue();
+        }
+    }
+
+    private void showQueue(GuildMessageReceivedEvent event) {
+        EmbedBuilder info = new EmbedBuilder();
+        String queue = "";
+        queue += guildMusicManager.player.getPlayingTrack().getInfo().title + " (playing now)\n";
+        for(AudioTrack a : guildMusicManager.scheduler.getQueue()) {
+            queue += a.getInfo().title + "\n";
+        }
+        info.addField("Queue", queue, false);
+        event.getChannel().sendTyping().queue();
+        event.getChannel().sendMessage(info.build()).queue();
+    }
+
 }
 
