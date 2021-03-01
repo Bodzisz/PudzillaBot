@@ -42,6 +42,16 @@ public class Music extends ListenerAdapter {
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "np") ||
                 args[0].equalsIgnoreCase(Pudzilla.prefix + "nowplaying")) { nowPlaying(event); }
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "queue")) { showQueue(event); }
+
+        /*
+        -p or -play + trackURL -> Starting playing music or unpausing
+        -skip                  -> skips track
+        -leave                 -> bot leaves the channel and queue is cleared
+        -pause                 -> pauses current track
+        -np or -nowplating     -> Sends message with current track title
+        -queue                 -> Prints all the tracks in queue
+         */
+
     }
 
     private void play(String[] args, GuildMessageReceivedEvent event) {
