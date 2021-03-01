@@ -34,15 +34,20 @@ public class Play extends ListenerAdapter {
     {
         String[] args = event.getMessage().getContentRaw().split("\\s+");
 
-        if(args[0].equalsIgnoreCase(Pudzilla.prefix + "p")) {
+        if(args[0].equalsIgnoreCase(Pudzilla.prefix + "p")) { play(args,event); }
+        if(args[0].equalsIgnoreCase(Pudzilla.prefix + "skip")) { skip(args,event); }
+
+
+    }
+
+    private void play(String[] args, GuildMessageReceivedEvent event) {
 
             VoiceChannel channel = event.getMember().getVoiceState().getChannel();
             AudioManager guildAudioManager = channel.getGuild().getAudioManager();
             guildAudioManager.openAudioConnection(channel);
             guildAudioManager.setSendingHandler(guildMusicManager.getSendHandler());
 
-
-            if (args[1] != null) {
+            if (args.length > 1) {
 
                 audioManager.loadItemOrdered(guildMusicManager, args[1], new AudioLoadResultHandler() {
                     @Override
@@ -69,6 +74,29 @@ public class Play extends ListenerAdapter {
                     }
                 });
             }
+            else {
+                if(guildMusicManager.player.getPlayingTrack() == null) {
+                    if (!guildMusicManager.scheduler.isEmpty()) {
+                        if (guildMusicManager.player.isPaused()) {
+                            guildMusicManager.player.setPaused(false);
+                        }
+                    } else {
+                        event.getChannel().sendMessage("Queue is empty!").queue();
+                    }
+                }
+                else {
+                    event.getChannel().sendMessage("Already playing!").queue();
+                }
+            }
+    }
+
+    private void skip(String[] args, GuildMessageReceivedEvent event) {
+        if(!guildMusicManager.scheduler.isEmpty()) {
+            guildMusicManager.scheduler.nextTrack();
+            event.getChannel().sendMessage("Skipped!").queue();
+        }
+        else {
+            event.getChannel().sendMessage("Queue is empty!").queue();
         }
     }
 }
