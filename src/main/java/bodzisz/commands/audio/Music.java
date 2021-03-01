@@ -2,7 +2,6 @@ package bodzisz.commands.audio;
 
 import bodzisz.Pudzilla;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
@@ -15,33 +14,55 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
 
-import java.io.File;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 public class Music extends ListenerAdapter {
 
     private final AudioPlayerManager audioManager;
     GuildMusicManager guildMusicManager;
+    Youtube yt;
 
-    public Music() {
+    public Music() throws GeneralSecurityException, IOException {
         audioManager = new DefaultAudioPlayerManager();
         guildMusicManager = new GuildMusicManager(audioManager);
         AudioSourceManagers.registerRemoteSources(audioManager);
         AudioSourceManagers.registerLocalSource(audioManager);
+        yt = new Youtube();
     }
 
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event)
     {
         String[] args = event.getMessage().getContentRaw().split("\\s+");
+        String trackURL = "";
+        if(args.length > 1) {
+            for (int i = 1; i < args.length; i++) {
+                trackURL += args[i] + " ";
+            }
+        }
+        else { trackURL = null; }
+
 
         if(args[0].equalsIgnoreCase(Pudzilla.prefix + "p") ||
-                args[0].equalsIgnoreCase(Pudzilla.prefix + "play")) { play(args,event); }
+                args[0].equalsIgnoreCase(Pudzilla.prefix + "play")) {
+
+            play(trackURL,event, 1);
+        }
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "skip")) { skip(event); }
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "leave")) { leave(event); }
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "pause")) { pause(event); }
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "np") ||
                 args[0].equalsIgnoreCase(Pudzilla.prefix + "nowplaying")) { nowPlaying(event); }
         else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "queue")) { showQueue(event); }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "pyt")) {
+            try {
+                trackURL = yt.getVideoId(trackURL);
+            } catch (IOException e) {
+               e.printStackTrace();
+            }
+            play(trackURL,event, 2);
+        }
 
         /*
         -p or -play + trackURL -> Starting playing music or unpausing
@@ -50,20 +71,21 @@ public class Music extends ListenerAdapter {
         -pause                 -> pauses current track
         -np or -nowplating     -> Sends message with current track title
         -queue                 -> Prints all the tracks in queue
+        -pyt                   -> Play track from yt using keywords
          */
 
     }
 
-    private void play(String[] args, GuildMessageReceivedEvent event) {
+    private void play(String trackURL, GuildMessageReceivedEvent event, int type) {
 
             VoiceChannel channel = event.getMember().getVoiceState().getChannel();
             AudioManager guildAudioManager = channel.getGuild().getAudioManager();
             guildAudioManager.openAudioConnection(channel);
             guildAudioManager.setSendingHandler(guildMusicManager.getSendHandler());
 
-            if (args.length > 1) {
+            if(trackURL != null) {
 
-                audioManager.loadItemOrdered(guildMusicManager, args[1], new AudioLoadResultHandler() {
+                audioManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
                         guildMusicManager.scheduler.queue(track);
@@ -95,7 +117,12 @@ public class Music extends ListenerAdapter {
                             guildMusicManager.player.setPaused(false);
                         }
                     } else {
-                        event.getChannel().sendMessage("Queue is empty!").queue();
+                        if(type == 2) {
+                            event.getChannel().sendMessage("Couldn't find the song!").queue();
+                        }
+                        else {
+                            event.getChannel().sendMessage("Queue is empty!").queue();
+                        }
                     }
                 }
                 else {
