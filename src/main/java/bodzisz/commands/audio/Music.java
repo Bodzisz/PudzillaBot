@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.NoSuchElementException;
 
 public class Music extends ListenerAdapter {
 
@@ -61,7 +62,18 @@ public class Music extends ListenerAdapter {
             } catch (IOException e) {
                e.printStackTrace();
             }
+            catch (NoSuchElementException e2) {
+                trackURL = null;
+            }
             play(trackURL,event, 2);
+        }
+        else if(args[0].equalsIgnoreCase(Pudzilla.prefix + "volume")) {
+            if(args.length > 1) {
+                volume(args[1], event);
+            }
+            else {
+                volume(null, event);
+            }
         }
 
         /*
@@ -71,7 +83,8 @@ public class Music extends ListenerAdapter {
         -pause                 -> pauses current track
         -np or -nowplating     -> Sends message with current track title
         -queue                 -> Prints all the tracks in queue
-        -pyt                   -> Play track from yt using keywords
+        -pyt  + keywords       -> Play track from yt using keywords
+        -volume + newValue[10,100] -> Change volume value
          */
 
     }
@@ -127,7 +140,12 @@ public class Music extends ListenerAdapter {
                 }
                 else {
                     guildMusicManager.player.setPaused(false);
-                    event.getChannel().sendMessage("Unpaused or already playing!").queue();
+                    if(type == 2) {
+                        event.getChannel().sendMessage("Couldn't find the song!").queue();
+                    }
+                    else {
+                        event.getChannel().sendMessage("Unpaused or already playing!").queue();
+                    }
                 }
             }
     }
@@ -164,15 +182,42 @@ public class Music extends ListenerAdapter {
     }
 
     private void showQueue(GuildMessageReceivedEvent event) {
-        EmbedBuilder info = new EmbedBuilder();
         String queue = "";
         queue += guildMusicManager.player.getPlayingTrack().getInfo().title + " (playing now)\n";
-        for(AudioTrack a : guildMusicManager.scheduler.getQueue()) {
+        for (AudioTrack a : guildMusicManager.scheduler.getQueue()) {
             queue += a.getInfo().title + "\n";
+            if(queue.length() > 1850) {
+                queue += "Couldn't load more, Queue is too long!";
+                break;
+            }
         }
-        info.addField("Queue", queue, false);
-        event.getChannel().sendTyping().queue();
-        event.getChannel().sendMessage(info.build()).queue();
+        try {
+            EmbedBuilder info = new EmbedBuilder();
+
+            info.addField("Queue", queue, false);
+            event.getChannel().sendTyping().queue();
+            event.getChannel().sendMessage(info.build()).queue();
+        } catch (IllegalArgumentException e) {
+            event.getChannel().sendTyping().queue();
+            event.getChannel().sendMessage(queue).queue();
+        }
+    }
+
+    private void volume(String newVolume, GuildMessageReceivedEvent event) {
+        int oldVolume = guildMusicManager.player.getVolume();
+        if(newVolume == null) {
+            event.getChannel().sendMessage("Current volume: " + oldVolume).queue();
+        }
+        else
+        {
+            try {
+                int newVolumeInt = Math.max(10, Math.min(100, Integer.parseInt(newVolume)));
+                guildMusicManager.player.setVolume(newVolumeInt);
+                event.getChannel().sendMessage("Changed from " + oldVolume + " to " + newVolumeInt).queue();
+            } catch (NumberFormatException e) {
+                event.getChannel().sendMessage("Wrong input!").queue();
+            }
+        }
     }
 
 }
