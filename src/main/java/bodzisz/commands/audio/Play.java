@@ -19,65 +19,57 @@ import java.io.File;
 
 public class Play extends ListenerAdapter {
 
+    private AudioPlayerManager audioManager;
+    GuildMusicManager guildMusicManager;
+
+    public Play() {
+        audioManager = new DefaultAudioPlayerManager();
+        guildMusicManager = new GuildMusicManager(audioManager);
+        AudioSourceManagers.registerRemoteSources(audioManager);
+        AudioSourceManagers.registerLocalSource(audioManager);
+    }
+
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event)
     {
         String[] args = event.getMessage().getContentRaw().split("\\s+");
 
         if(args[0].equalsIgnoreCase(Pudzilla.prefix + "p")) {
-            AudioManager guildAudioManager = event.getGuild().getAudioManager();
-            AudioPlayerManager audioManager = new DefaultAudioPlayerManager();
-            AudioSourceManagers.registerRemoteSources(audioManager);
-            AudioPlayer player = audioManager.createPlayer();
-            AudioPlayerSendHandler audioPlayerSendHandler = new AudioPlayerSendHandler(player);
-            guildAudioManager.setSendingHandler(audioPlayerSendHandler);
 
-            TrackScheduler trackScheduler = new TrackScheduler(player);
-            player.addListener(trackScheduler);
+            VoiceChannel channel = event.getMember().getVoiceState().getChannel();
+            AudioManager guildAudioManager = channel.getGuild().getAudioManager();
+            guildAudioManager.openAudioConnection(channel);
+            guildAudioManager.setSendingHandler(guildMusicManager.getSendHandler());
 
-            try {
-                VoiceChannel channel = event.getMember().getVoiceState().getChannel();
-                guildAudioManager.openAudioConnection(channel);
-            } catch (NullPointerException e) {
-                e.printStackTrace();
-            }
+
             if (args[1] != null) {
 
-                audioManager.loadItemOrdered(player, args[1], new AudioLoadResultHandler() {
+                audioManager.loadItemOrdered(guildMusicManager, args[1], new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
-                        trackScheduler.queue(track);
+                        guildMusicManager.scheduler.queue(track);
+                        event.getChannel().sendMessage("Added to queue: " + track.getInfo().title).queue();
                     }
 
                     @Override
                     public void playlistLoaded(AudioPlaylist playlist) {
                         for (AudioTrack track : playlist.getTracks()) {
-                            trackScheduler.queue(track);
+                            guildMusicManager.scheduler.queue(track);
                         }
                     }
 
                     @Override
                     public void noMatches() {
-                        // Notify the user that we've got nothing
+                        event.getChannel().sendMessage("No matches found!").queue();
                     }
 
                     @Override
                     public void loadFailed(FriendlyException throwable) {
-                        // Notify the user that everything exploded
+                        event.getChannel().sendMessage("Load failed").queue();
                     }
                 });
-
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                event.getChannel().sendMessage("Playing " + player.getPlayingTrack().getInfo().title).queue();
             }
         }
     }
-
-
 }
+
