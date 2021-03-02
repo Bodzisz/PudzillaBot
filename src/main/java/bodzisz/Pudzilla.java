@@ -1,5 +1,6 @@
 package bodzisz;
 
+import bodzisz.commands.Clear;
 import bodzisz.commands.Test;
 import bodzisz.commands.Pudzian;
 import bodzisz.commands.audio.Music;
@@ -29,5 +30,6 @@ public class Pudzilla {
         jda.addEventListener(new GuildMemberJoin());
         jda.addEventListener(new Pudzian());
         jda.addEventListener(new Music());
+        jda.addEventListener(new Clear());
     }
 }
