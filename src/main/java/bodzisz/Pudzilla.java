@@ -1,5 +1,6 @@
 package bodzisz;
 
+import bodzisz.Token.FileParser;
 import bodzisz.commands.Clear;
 import bodzisz.commands.Test;
 import bodzisz.commands.Pudzian;
@@ -19,11 +20,11 @@ import java.security.GeneralSecurityException;
 
 public class Pudzilla {
     public static JDA jda;
-    public final static String token = "ODEzODE4NTAxODM5MDYxMDAy.YDU1ig.TktzbXtSFK8ch2jsbl_DaI59004";
     final static Logger logger = LoggerFactory.getLogger(Pudzilla.class);
     public static final String prefix = "-";
 
-    public static void main(String[] args) throws GeneralSecurityException, IOException {
+    public static void main(String[] args) throws Exception {
+        final String token = FileParser.readFileAsString("src/main/resources/token.txt");;
         jda = JDABuilder.createDefault(token).enableIntents(GatewayIntent.GUILD_MEMBERS).build();
 
         jda.addEventListener(new Test());
