@@ -1,6 +1,11 @@
 # PudzillaBot
 Discord bot Pudzilla is a meme project, created in glory of polish strongman and MMA fighter **Mariusz Pudzianowski**.
 
+<font size="5">Used API:</font>
+-
+- JDA - Java Discord API
+- Google API Services YouTube
+
 ## Commands:
 
 All commands need to be preceded by a prefix "-"
