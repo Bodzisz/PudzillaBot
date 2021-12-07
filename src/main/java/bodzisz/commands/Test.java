@@ -17,7 +17,7 @@ public class Test extends ListenerAdapter {
 
         if(args[0].equalsIgnoreCase(Pudzilla.prefix + "test")) {
             EmbedBuilder info = new EmbedBuilder();
-            info.setTitle("CHUJ");
+            info.setTitle("123");
             info.addField("New Field", "TANIO SKÓRY NIE SPRZEDAM", false);
             info.setDescription("Testing if everything works");
             info.setColor(0xb30000);
